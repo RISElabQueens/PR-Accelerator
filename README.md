@@ -1,6 +1,10 @@
 # PR-Accelerator
 
-PR-Accelerator is a tool that extracts informations regarding pull requests (PRs) and points out the delays in first response. This tool was presented in our paper titled Understanding the Time to First Response In GitHub Pull Requests published at the MSR 2023 conference.
+
+PR-Accelerator is a set of tools that reports analytics and information regarding pull requests (PRs) and points out the delays in first response. This tool was presented in our paper titled Understanding the Time to First Response In GitHub Pull Requests published at the MSR 2023 conference.
+
+# Update
+- May, 2023: Introduced first two tools (PR data extractor & PR initial interaction analytics report) of PR-Accelerator.
 
 # Features
 
@@ -46,7 +50,7 @@ python3 pr_getdata.py date owner repo github token
 
 5. Run the following command:
 ```
-python3 PR_Accelerator.py -output "pr_summary.csv"
+python3 pr_initial_interaction_analytics.py -output "pr_summary.csv"
 ```
 
 
