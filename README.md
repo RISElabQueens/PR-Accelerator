@@ -58,6 +58,8 @@ python3 pr_getdata.py enddate owner repo github_token
 
 > Example: python3 pr_getdata.py 2023-04-30 huggingface transformers xxxxx
 
+Note: The above command will generate three csv files (pr_comment_enddate.csv, pr_review_enddate.csv and pr_summary_enddate.csv). You need to provide the path of these csv files in pr_initial_interaction_analytics.py file.
+
 5. To get the initial analytics of a PR run the following command:
 
 ```
