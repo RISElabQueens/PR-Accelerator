@@ -27,7 +27,7 @@ For each pull requests, the tool reports the following information:
 - time_to_second_response[hour]: The time to receive the second response in hours
 - first_response_period: First response in time wise categorization form. 
 - after_first_response_period: Time after the first response in time wise categorization form.
-
+- bot_first: True if the bot is the first responder of the pull request.
 
 
 # Usage
@@ -44,9 +44,9 @@ git clone https://github.com/RISElabQueens/PR-Accelerator.git
 ```
 4. To get pull request data run the following command
 ```
-python3 pr_getdata.py date owner repo github token 
+python3 pr_getdata.py enddate owner repo github_token 
 ```
-> Example: python3 pr_getdata.py 2019-04-30 huggingface transformers xxxxx
+> Example: python3 pr_getdata.py 2023-04-30 huggingface transformers xxxxx
 
 5. Run the following command:
 ```
