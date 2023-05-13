@@ -5,11 +5,11 @@ PR-Accelerator is a set of tools that reports analytics and information regardin
 # Tools:
 
 - PR data extractor: It extracts all information about a repository and saves them in three different csv files (pr_comment_enddate.csv, pr_review_enddate.csv and pr_summary_enddate.csv)
-- PR initial interaction analytics: It reports the analytics of a pull request and saves it in a separate csv file (pr_summary.csv)
+- PR first response summary: It reports the analytics about first resposne of a pull request and saves it in a separate csv file (pr_summary.csv)
 
 # Update
 
-- May, 2023: Introduced first two tools (PR data extractor & PR initial interaction analytics report) of PR-Accelerator.
+- May, 2023: Introduced first two tools (PR data extractor & PR first response summary report) of PR-Accelerator.
 
 # Features
 
@@ -53,10 +53,12 @@ git clone https://github.com/RISElabQueens/PR-Accelerator.git
 4. To get pull request data run the following command
 
 ```
-python3 pr_getdata.py enddate owner repo github_token
+python3 pr_getdata.py num_days enddate owner repo github_token
 ```
 
-> Example: python3 pr_getdata.py 2023-04-30 huggingface transformers xxxxx
+> Example: python3 pr_getdata.py 2023-04-30 7 huggingface transformers xxxxx
+
+***This would fetch pull request data from the "transformers" repository owned by "huggingface" for pull requests created in the 7 days up to and including 2023-04-30***
 
 Note: The above command will generate three csv files (pr_comment_enddate.csv, pr_review_enddate.csv and pr_summary_enddate.csv). You need to provide the path of these csv files in pr_initial_interaction_analytics.py file.
 
