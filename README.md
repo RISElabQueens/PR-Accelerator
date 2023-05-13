@@ -63,7 +63,7 @@ python3 pr_getdata.py end_date num_days owner repo github_token
 
 Note: The above command will generate three csv files (pr_comment_end_date.csv, pr_review_end_date.csv and pr_summary_end_date.csv). You need to provide the path of these csv files in pr_first_response_summary.py file.
 
-5. To get the initial analytics of a PR run the following command:
+5. To get the first response analytics of a PR run the following command:
 
 ```
 python3 pr_first_response_summary.py -output "pr_first_response_analytics.csv"
