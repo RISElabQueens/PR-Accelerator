@@ -58,7 +58,7 @@ python3 pr_getdata.py end_date num_days owner repo github_token
 
 > Example: python3 pr_getdata.py 2023-04-30 7 huggingface transformers xxxxx
 
-***This would fetch pull request data from the "transformers" repository owned by "huggingface" for pull requests created in the last 7 days and including 2023-04-30***
+***This would fetch pull request data from the "transformers" repository owned by "huggingface" for pull requests created in the last 7 days and including 2023-04-30 using github_token xxxx***
 
 Note: The above command will generate three csv files (pr_comment_enddate.csv, pr_review_enddate.csv and pr_summary_enddate.csv). You need to provide the path of these csv files in pr_initial_interaction_analytics.py file.
 
