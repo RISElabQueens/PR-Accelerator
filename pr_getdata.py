@@ -9,10 +9,11 @@ import requests_cache
 csv_headers = ['author', 'html_url', 'status', 'time_to_close/merge[hour]', 'title', 'created_at', 'published_at', 'merged_at',
                'closed_at', 'approved_by', 'comment_by', 'review_by', 'requested_reviewers']
 
-csv_headers_comments = ['html_url', 'content', 'created_at','comment_by', 'pull_request_url',
-'time_from_publish[hour]', 'time_from_open[hour]', 'time_to_close/merge[hour]']
+csv_headers_comments = ['html_url', 'content', 'created_at', 'comment_by', 'pull_request_url',
+                        'time_from_publish[hour]', 'time_from_open[hour]', 'time_to_close/merge[hour]']
 
-csv_headers_reviews = ['html_url', 'type', 'pull_request_url', 'content', 'created_at','updated_at','review_by']
+csv_headers_reviews = ['html_url', 'type', 'pull_request_url',
+                       'content', 'created_at', 'updated_at', 'review_by']
 
 
 def get_next_url(response):
@@ -37,16 +38,14 @@ def should_skip(repo_url, skip_repo_list):
     return skip
 
 
-def main(end_date_str, author_list, skip_repo_list, token):
+def main(end_date_str, num_days, author_list, skip_repo_list, token):
     session = requests_cache.CachedSession('cached_requests',
                                            allowable_methods=['GET', 'POST'],
                                            expire_after=3600 * 48)
 
-   
-
     # end_date = datetime.now().strftime("%Y-%m-%d")
     end_date = datetime.strptime(end_date_str, "%Y-%m-%d")
-    start_date_str = (end_date - timedelta(days=1)).strftime("%Y-%m-%d")
+    start_date_str = (end_date - timedelta(days=num_days)).strftime("%Y-%m-%d")
 
     headers = {
         "Accept": "application/vnd.github.v3+json",
@@ -62,8 +61,8 @@ def main(end_date_str, author_list, skip_repo_list, token):
     # set the user and repository name
     # owner = "huggingface"
     # repo = "transformers"
-    #org:{owner}
-    #repo:{owner}/{repo}
+    # org:{owner}
+    # repo:{owner}/{repo}
     api_url = f"https://api.github.com/search/issues?q=type:pr+repo:{owner}/{repo}+created:{start_date_str}..{end_date_str}&per_page={page_size}&page=1"
     while True:
         print(api_url)
@@ -78,7 +77,7 @@ def main(end_date_str, author_list, skip_repo_list, token):
                     continue
                 if should_skip(pr['url'], skip_repo_list):
                     continue
-                
+
                 pr_list.append(pr)
             next_api_url = get_next_url(response)
             if next_api_url is None:
@@ -172,25 +171,30 @@ def main(end_date_str, author_list, skip_repo_list, token):
         pr['approved_by'] = approved_by
         pr['published_at'] = publish_time
         pr['requested_reviewers'] = requested_reviewers
-        
-        publish_time = datetime.strptime(pr['published_at'], "%Y-%m-%dT%H:%M:%SZ")
-        
+
+        publish_time = datetime.strptime(
+            pr['published_at'], "%Y-%m-%dT%H:%M:%SZ")
+
         if pr['merged_at'] is not None:
             pr['status'] = "MERGED"
-            merge_time = datetime.strptime(pr['merged_at'], "%Y-%m-%dT%H:%M:%SZ")
-            pr['time_to_close/merge[hour]'] = round((merge_time - publish_time).total_seconds() / 3600.0, 1)
+            merge_time = datetime.strptime(
+                pr['merged_at'], "%Y-%m-%dT%H:%M:%SZ")
+            pr['time_to_close/merge[hour]'] = round(
+                (merge_time - publish_time).total_seconds() / 3600.0, 1)
         elif pr['closed_at'] is not None:
             if pr['state'] == "open":
                 # ignore reopen prs
                 break
             else:
                 pr['status'] = "CLOSED"
-            close_time = datetime.strptime(pr['closed_at'], "%Y-%m-%dT%H:%M:%SZ")
-            pr['time_to_close/merge[hour]'] = round((close_time - publish_time).total_seconds() / 3600.0, 1)
+            close_time = datetime.strptime(
+                pr['closed_at'], "%Y-%m-%dT%H:%M:%SZ")
+            pr['time_to_close/merge[hour]'] = round(
+                (close_time - publish_time).total_seconds() / 3600.0, 1)
         else:
             pr['status'] = 'OPEN'
-            pr['time_to_close/merge[hour]'] = round((datetime.now() - publish_time).total_seconds() / 3600.0, 1)
-        
+            pr['time_to_close/merge[hour]'] = round(
+                (datetime.now() - publish_time).total_seconds() / 3600.0, 1)
 
         review_comment_url = pr['url'].replace('issue', 'pull') + '/comments'
         while True:
@@ -210,13 +214,12 @@ def main(end_date_str, author_list, skip_repo_list, token):
                         # only consider non-author
                         review_by.append(review['review_by'])
 
-                
                 next_api_url = get_next_url(response)
                 if next_api_url is None:
                     break
                 else:
                     review_url = next_api_url
-        
+
         pr['review_by'] = review_by
         comments_url = pr['url'] + '/comments'
         while True:
@@ -227,40 +230,47 @@ def main(end_date_str, author_list, skip_repo_list, token):
 
             if response.status_code == 200:
                 comments = response.json()
-                
+
                 for comment in comments:
                     if len(comment['body'].strip()) <= 2:
                         print(f"Skip comment: {comment['body']}")
                         continue
-           
+
                     comment['content'] = comment['body'].strip()
                     comment['comment_by'] = comment['user']['login']
-                    comment_publish_time = datetime.strptime(comment['created_at'], "%Y-%m-%dT%H:%M:%SZ")
-                    open_time = datetime.strptime(pr['created_at'], "%Y-%m-%dT%H:%M:%SZ")
-                    comment['time_from_publish[hour]'] = round((comment_publish_time - publish_time).total_seconds() / 3600.0, 1)
-                    comment['time_from_open[hour]'] = round((comment_publish_time - open_time).total_seconds() / 3600.0, 1)
+                    comment_publish_time = datetime.strptime(
+                        comment['created_at'], "%Y-%m-%dT%H:%M:%SZ")
+                    open_time = datetime.strptime(
+                        pr['created_at'], "%Y-%m-%dT%H:%M:%SZ")
+                    comment['time_from_publish[hour]'] = round(
+                        (comment_publish_time - publish_time).total_seconds() / 3600.0, 1)
+                    comment['time_from_open[hour]'] = round(
+                        (comment_publish_time - open_time).total_seconds() / 3600.0, 1)
                     if pr['status'] == 'OPEN':
-                        comment['time_to_close/merge[hour]'] = round((datetime.now() - comment_publish_time).total_seconds() / 3600.0, 1)
+                        comment['time_to_close/merge[hour]'] = round(
+                            (datetime.now() - comment_publish_time).total_seconds() / 3600.0, 1)
                     elif pr['status'] == 'MERGED':
-                        merge_time = datetime.strptime(pr['merged_at'], "%Y-%m-%dT%H:%M:%SZ")
-                        comment['time_to_close/merge[hour]'] = round((merge_time - comment_publish_time).total_seconds() / 3600.0, 1)
+                        merge_time = datetime.strptime(
+                            pr['merged_at'], "%Y-%m-%dT%H:%M:%SZ")
+                        comment['time_to_close/merge[hour]'] = round(
+                            (merge_time - comment_publish_time).total_seconds() / 3600.0, 1)
                     else:
-                        close_time = datetime.strptime(pr['closed_at'], "%Y-%m-%dT%H:%M:%SZ")
-                        comment['time_to_close/merge[hour]'] = round((close_time - comment_publish_time).total_seconds() / 3600.0, 1)
-                    
+                        close_time = datetime.strptime(
+                            pr['closed_at'], "%Y-%m-%dT%H:%M:%SZ")
+                        comment['time_to_close/merge[hour]'] = round(
+                            (close_time - comment_publish_time).total_seconds() / 3600.0, 1)
+
                     comment_list.append(comment)
                     if comment['comment_by'] != pr['author']:
                         # only consider non-author
                         comment_by.append(comment['comment_by'])
-                    
+
                 next_api_url = get_next_url(response)
                 if next_api_url is None:
                     break
                 else:
                     comments_url = next_api_url
         pr['comment_by'] = comment_by
-        
-        
 
     with open(f'pr_summary_{end_date_str}.csv', 'w', encoding='utf-8') as fout:
         csv_writer = csv.writer(fout)
@@ -268,7 +278,7 @@ def main(end_date_str, author_list, skip_repo_list, token):
         for pr in pr_list:
             row = pr_to_row(pr)
             csv_writer.writerow(row)
-    
+
     with open(f'pr_comments_{end_date_str}.csv', 'w', encoding='utf-8') as fout:
         csv_writer = csv.writer(fout)
         csv_writer.writerow(csv_headers_comments)
@@ -276,14 +286,13 @@ def main(end_date_str, author_list, skip_repo_list, token):
             comment['pull_request_url'] = comment['html_url'].split('#')[0]
             row = comment_to_row(comment)
             csv_writer.writerow(row)
-    
+
     with open(f'pr_reviews_{end_date_str}.csv', 'w', encoding='utf-8') as fout:
         csv_writer = csv.writer(fout)
         csv_writer.writerow(csv_headers_reviews)
         for review in review_list:
             row = review_to_row(review)
             csv_writer.writerow(row)
-
 
 
 def review_to_row(review):
@@ -310,6 +319,7 @@ def comment_to_row(comment):
         comment['time_to_close/merge[hour]'],
     ]
 
+
 def pr_to_row(pr):
     return [
         pr['author'],
@@ -328,13 +338,11 @@ def pr_to_row(pr):
     ]
 
 
-
-    
-    
 if __name__ == '__main__':
-    date = sys.argv[1]
-    owner = sys.argv[2]
-    repo = sys.argv[3]
-    token = sys.argv[4]
+    end_date_str = sys.argv[1]
+    num_days = int(sys.argv[2])
+    owner = sys.argv[3]
+    repo = sys.argv[4]
+    token = sys.argv[5]
 
-    main(date, owner, repo, token)
+    main(end_date_str, num_days, owner, repo, token)
