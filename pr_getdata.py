@@ -30,15 +30,7 @@ def get_next_url(response):
     return next_api_url
 
 
-def should_skip(repo_url, skip_repo_list):
-    skip = False
-    for skip_repo in skip_repo_list:
-        if f"/{skip_repo}/" in repo_url:
-            skip = True
-    return skip
-
-
-def main(end_date_str, num_days, author_list, skip_repo_list, token):
+def main(end_date_str, num_days, owner, repo, token):
     session = requests_cache.CachedSession('cached_requests',
                                            allowable_methods=['GET', 'POST'],
                                            expire_after=3600 * 48)
@@ -74,8 +66,6 @@ def main(end_date_str, num_days, author_list, skip_repo_list, token):
             prs = response.json()['items']
             for pr in prs:
                 if pr.get('draft') is True:
-                    continue
-                if should_skip(pr['url'], skip_repo_list):
                     continue
 
                 pr_list.append(pr)
@@ -218,7 +208,7 @@ def main(end_date_str, num_days, author_list, skip_repo_list, token):
                 if next_api_url is None:
                     break
                 else:
-                    review_url = next_api_url
+                    review_comment_url = next_api_url
 
         pr['review_by'] = review_by
         comments_url = pr['url'] + '/comments'
@@ -339,10 +329,10 @@ def pr_to_row(pr):
 
 
 if __name__ == '__main__':
-    end_date_str = sys.argv[1]
-    num_days = int(sys.argv[2])
-    owner = sys.argv[3]
-    repo = sys.argv[4]
-    token = sys.argv[5]
+    arg_end_date_str = sys.argv[1]
+    arg_num_days = int(sys.argv[2])
+    arg_owner = sys.argv[3]
+    arg_repo = sys.argv[4]
+    arg_token = sys.argv[5]
 
-    main(end_date_str, num_days, owner, repo, token)
+    main(arg_end_date_str, arg_num_days, arg_owner, arg_repo, arg_token)
